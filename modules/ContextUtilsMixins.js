@@ -1,5 +1,4 @@
 import React from 'react'
-import invariant from 'invariant'
 import PropTypes from 'prop-types'
 
 // Works around issues with context updates failing to propagate.
@@ -18,21 +17,16 @@ function makeContextName(name) {
 
 const prefixUnsafeLifecycleMethods = typeof React.forwardRef !== 'undefined'
 
-export function CreateContextProvider(ComposedComponent, name, options) {
+export function ContextProvider(name) {
   const contextName = makeContextName(name)
   const listenersKey = `${contextName}/listeners`
   const eventIndexKey = `${contextName}/eventIndex`
   const subscribeKey = `${contextName}/subscribe`
-  const withRef = options && options.withRef
 
-  return class extends React.Component {
-    static childContextTypes = {
+  const config = {
+    childContextTypes: {
       [contextName]: contextProviderShape.isRequired
-    }
-
-    constructor(props) {
-      super(props)
-    }
+    },
 
     getChildContext() {
       return {
@@ -41,34 +35,26 @@ export function CreateContextProvider(ComposedComponent, name, options) {
           subscribe: this[subscribeKey]
         }
       }
-    }
+    },
 
     // this method will be updated to UNSAFE_componentWillMount below for React versions >= 16.3
     componentWillMount() {
       this[listenersKey] = []
       this[eventIndexKey] = 0
-    }
+    },
 
     // this method will be updated to UNSAFE_componentWillReceiveProps below for React versions >= 16.3
     componentWillReceiveProps() {
       this[eventIndexKey]++
-    }
+    },
 
     componentDidUpdate() {
       this[listenersKey].forEach(listener =>
         listener(this[eventIndexKey])
       )
-    }
+    },
 
-    getWrappedInstance = () => {
-      invariant(
-        withRef,
-        'To access the wrapped instance, you need to specify ' +
-        '`{ withRef: true }` as the second argument of the withRouter() call.'
-      )
-    }
-
-    [subscribeKey] = (listener) => {
+    [subscribeKey](listener) {
       // No need to immediately call listener here.
       this[listenersKey].push(listener)
 
@@ -78,44 +64,37 @@ export function CreateContextProvider(ComposedComponent, name, options) {
         )
       }
     }
-
-    render() {
-      const props = { ...this.props };
-      if (withRef) {
-        props.withRef = (c) => {
-          this.wrappedInstance = c
-        }
-      }
-
-      return <ComposedComponent {...props} />
-    }
   }
+
+  if (prefixUnsafeLifecycleMethods) {
+    config.UNSAFE_componentWillMount = config.componentWillMount
+    config.UNSAFE_componentWillReceiveProps = config.componentWillReceiveProps
+    delete config.componentWillMount
+    delete config.componentWillReceiveProps
+  }
+  return config
 }
 
-export function CreateContextSubscriber(ComposedComponent, name, options) {
+export function ContextSubscriber(name) {
   const contextName = makeContextName(name)
   const lastRenderedEventIndexKey = `${contextName}/lastRenderedEventIndex`
   const handleContextUpdateKey = `${contextName}/handleContextUpdate`
   const unsubscribeKey = `${contextName}/unsubscribe`
-  const withRef = options && options.withRef
 
-  return class extends React.Component {
-    static displayName = `ContextSubscriberEnhancer(${ComposedComponent.displayName}, ${contextName})`;
-    static contextTypes = {
+  const config = {
+    contextTypes: {
       [contextName]: contextProviderShape
-    }
+    },
 
-    constructor(props, context) {
-      super(props, context)
-
-      if (!context[contextName]) {
-        this.state = {}
-      } else {
-        this.state = {
-          [lastRenderedEventIndexKey]: context[contextName].eventIndex
-        }
+    getInitialState() {
+      if (!this.context[contextName]) {
+        return {}
       }
-    }
+
+      return {
+        [lastRenderedEventIndexKey]: this.context[contextName].eventIndex
+      }
+    },
 
     componentDidMount() {
       if (!this.context[contextName]) {
@@ -125,7 +104,7 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
       this[unsubscribeKey] = this.context[contextName].subscribe(
         this[handleContextUpdateKey]
       )
-    }
+    },
 
     // this method will be updated to UNSAFE_componentWillReceiveProps below for React versions >= 16.3
     componentWillReceiveProps() {
@@ -136,7 +115,7 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
       this.setState({
         [lastRenderedEventIndexKey]: this.context[contextName].eventIndex
       })
-    }
+    },
 
     componentWillUnmount() {
       if (!this[unsubscribeKey]) {
@@ -145,33 +124,12 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
 
       this[unsubscribeKey]()
       this[unsubscribeKey] = null
-    }
+    },
 
-    getWrappedInstance = () => {
-      invariant(
-        withRef,
-        'To access the wrapped instance, you need to specify ' +
-        '`{ withRef: true }` as the second argument of the withRouter() call.'
-      )
-
-      return this.wrappedInstance
-    }
-
-    [handleContextUpdateKey] = (eventIndex) => {
+    [handleContextUpdateKey](eventIndex) {
       if (eventIndex !== this.state[lastRenderedEventIndexKey]) {
         this.setState({ [lastRenderedEventIndexKey]: eventIndex })
       }
-    }
-
-    render() {
-      const props = { ...this.props }
-      if (withRef) {
-        props.withRef = (c) => {
-          this.wrappedInstance = c
-        }
-      }
-
-      return <ComposedComponent {...props} />
     }
   }
 
@@ -181,9 +139,3 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
   }
   return config
 }
-
-// We are exporting this just to backward compatibility
-export {
-  ContextProvider,
-  ContextSubscriber
-} from './ContextUtilsMixins'

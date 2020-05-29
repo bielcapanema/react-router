@@ -3,7 +3,7 @@ import createReactClass from 'create-react-class'
 import { bool, object, string, func, oneOfType, shape, elementType } from 'prop-types'
 import invariant from 'invariant'
 import { routerShape } from './PropTypes'
-import { ContextSubscriber } from './ContextUtils'
+import { CreateContextSubscriber } from './ContextUtils'
 
 function isLeftClickEvent(event) {
   return event.button === 0
@@ -41,8 +41,6 @@ function resolveToLocation(to, router) {
  */
 const Link = createReactClass({
   displayName: 'Link',
-
-  mixins: [ ContextSubscriber('router') ],
 
   contextTypes: {
     router: routerShape
@@ -129,4 +127,7 @@ const Link = createReactClass({
 
 })
 
-export default Link
+const ContextLink = CreateContextSubscriber(Link, 'router', { withRef: true })
+ContextLink.displayName = 'Link'
+
+export default ContextLink
