@@ -22,8 +22,6 @@ const propTypes = {
   matchContext: object
 }
 
-const prefixUnsafeLifecycleMethods = typeof React.forwardRef !== 'undefined'
-
 /**
  * A <Router> is a high-level API for automatically setting up
  * a router that renders a <RouterContext> with all the props
@@ -39,7 +37,7 @@ class Router extends Component {
   }
 
   constructor(props) {
-    super(props); 
+    super(props)
     this.state =  {
       location: null,
       routes: null,
@@ -47,7 +45,7 @@ class Router extends Component {
       components: null
     }
 
-    this.handleError = this.handleError.bind(this);
+    this.handleError = this.handleError.bind(this)
     this.createRouterObject = this.createRouterObject.bind(this)
     this.createTransitionManager = this.createTransitionManager.bind(this)
   }

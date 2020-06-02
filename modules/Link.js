@@ -1,5 +1,4 @@
-import React from 'react'
-import createReactClass from 'create-react-class'
+import React, { Component } from 'react'
 import { bool, object, string, func, oneOfType, shape, elementType } from 'prop-types'
 import invariant from 'invariant'
 import { routerShape } from './PropTypes'
@@ -39,33 +38,13 @@ function resolveToLocation(to, router) {
  *
  *   <Link to={`/posts/${post.id}`} />
  */
-const Link = createReactClass({
-  displayName: 'Link',
+class Link extends Component{
+  constructor(props) {
+    super(props)
 
-  contextTypes: {
-    router: routerShape
-  },
-
-  propTypes: {
-    to: oneOfType([ string, object, func ]),
-    activeStyle: object,
-    activeClassName: string,
-    onlyActiveOnIndex: bool.isRequired,
-    onClick: func,
-    target: string,
-    innerRef: oneOfType([
-      string,
-      func,
-      shape({ current: elementType })
-    ])
-  },
-
-  getDefaultProps() {
-    return {
-      onlyActiveOnIndex: false,
-      style: {}
-    }
-  },
+    // No autobind in classes
+    this.handleClick = this.handleClick.bind(this);
+  }
 
   handleClick(event) {
     if (this.props.onClick)
@@ -91,15 +70,19 @@ const Link = createReactClass({
     event.preventDefault()
 
     router.push(resolveToLocation(this.props.to, router))
-  },
+  }
 
   render() {
-    const { to, activeClassName, activeStyle, onlyActiveOnIndex, innerRef, ...props } = this.props
+    const { to, activeClassName, activeStyle, onlyActiveOnIndex, innerRef, withRef, ...props } = this.props
 
     // Ignore if rendered outside the context of router to simplify unit testing.
     const { router } = this.context
 
     if (router) {
+      if (withRef) {
+        props.ref = (c) => withRef(c)
+      }
+
       // If user does not specify a `to` prop, return an empty anchor tag.
       if (!to) { return <a {...props} ref={innerRef} /> }
 
@@ -122,10 +105,38 @@ const Link = createReactClass({
       }
     }
 
-    return <a {...props} onClick={this.handleClick} ref={innerRef} />
+    return <a onClick={this.handleClick} ref={innerRef} {...props} />
   }
 
-})
+}
+
+Link.propTypes = {
+  to: oneOfType([ string, object, func ]),
+  activeStyle: object,
+  activeClassName: string,
+  onlyActiveOnIndex: bool.isRequired,
+  onClick: func,
+  target: string,
+  withRef: oneOfType([
+    string,
+    func,
+    shape({ current: elementType })
+  ]),
+  innerRef: oneOfType([
+    string,
+    func,
+    shape({ current: elementType })
+  ])
+}
+
+Link.contextTypes = {
+  router: routerShape
+}
+
+Link.defaultProps = {
+  onlyActiveOnIndex: false,
+  style: {}
+}
 
 const ContextLink = CreateContextSubscriber(Link, 'router', { withRef: true })
 ContextLink.displayName = 'Link'
