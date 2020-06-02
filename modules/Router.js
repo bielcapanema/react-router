@@ -95,17 +95,19 @@ class Router extends Component {
   }
 
   // this method will be updated to UNSAFE_componentWillMount below for React versions >= 16.3
-  componentWillMount() {
-    this._unlisten = this.transitionManager.listen((error, state) => {
-      if (error) {
-        this.handleError(error)
-      } else {
-        // Keep the identity of this.router because of a caveat in ContextUtils:
-        // they only work if the object identity is preserved.
-        assignRouterState(this.router, state)
-        this.setState(state, this.props.onUpdate)
-      }
-    })
+  UNSAFE_componentWillMount() {
+    if (!this._unlisten) {
+      this._unlisten = this.transitionManager.listen((error, state) => {
+        if (error) {
+          this.handleError(error)
+        } else {
+          // Keep the identity of this.router because of a caveat in ContextUtils:
+          // they only work if the object identity is preserved.
+          assignRouterState(this.router, state)
+          this.setState(state, this.props.onUpdate)
+        }
+      })
+    }
   }
 
   // this method will be updated to UNSAFE_componentWillReceiveProps below for React versions >= 16.3
