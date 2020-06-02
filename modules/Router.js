@@ -28,14 +28,6 @@ const propTypes = {
  * it needs each time the URL changes.
  */
 class Router extends Component {
-  static displayName = 'Router'
-
-  static propTypes = propTypes
-
-  static defaultProps = {
-    render: (props) => <RouterContext {...props} />
-  }
-
   constructor(props) {
     super(props)
     this.state =  {
@@ -44,13 +36,9 @@ class Router extends Component {
       params: null,
       components: null
     }
-
-    this.handleError = this.handleError.bind(this)
-    this.createRouterObject = this.createRouterObject.bind(this)
-    this.createTransitionManager = this.createTransitionManager.bind(this)
   }
 
-  handleError(error) {
+  handleError = (error) => {
     if (this.props.onError) {
       this.props.onError.call(this, error)
     } else {
@@ -59,7 +47,7 @@ class Router extends Component {
     }
   }
 
-  createRouterObject(state) {
+  createRouterObject = (state) => {
     const { matchContext } = this.props
     if (matchContext) {
       return matchContext.router
@@ -69,7 +57,7 @@ class Router extends Component {
     return createRouterObject(history, this.transitionManager, state)
   }
 
-  createTransitionManager() {
+  createTransitionManager = () => {
     const { matchContext } = this.props
     if (matchContext) {
       return matchContext.transitionManager
@@ -92,6 +80,9 @@ class Router extends Component {
   }
 
   componentDidMount() {
+    this.transitionManager = this.createTransitionManager()
+    this.router = this.createRouterObject(this.state)
+
     this._unlisten = this.transitionManager.listen((error, state) => {
       if (error) {
         this.handleError(error)
@@ -144,6 +135,14 @@ class Router extends Component {
       createElement
     })
   }
+}
+
+Router.displayName = 'Router'
+
+Router.propTypes = propTypes
+
+Router.defaultProps = {
+  render: (props) => <RouterContext {...props} />
 }
 
 export default Router

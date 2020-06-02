@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Component } from 'react'
 import invariant from 'invariant'
 import PropTypes from 'prop-types'
 
@@ -23,7 +23,7 @@ export function CreateContextProvider(ComposedComponent, name, options) {
   const subscribeKey = `${contextName}/subscribe`
   const withRef = options && options.withRef
 
-  return class extends React.Component {
+  return class extends Component {
     static childContextTypes = {
       [contextName]: contextProviderShape.isRequired
     }
@@ -91,7 +91,7 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
   const unsubscribeKey = `${contextName}/unsubscribe`
   const withRef = options && options.withRef
 
-  return class extends React.Component {
+  return class extends Component {
     static displayName = `ContextSubscriberEnhancer(${ComposedComponent.displayName}, ${contextName})`;
     static contextTypes = {
       [contextName]: contextProviderShape
