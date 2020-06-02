@@ -16,8 +16,6 @@ function makeContextName(name) {
   return `@@contextSubscriber/${name}`
 }
 
-const prefixUnsafeLifecycleMethods = typeof React.forwardRef !== 'undefined'
-
 export function CreateContextProvider(ComposedComponent, name, options) {
   const contextName = makeContextName(name)
   const listenersKey = `${contextName}/listeners`
@@ -32,6 +30,9 @@ export function CreateContextProvider(ComposedComponent, name, options) {
 
     constructor(props) {
       super(props)
+
+      this[listenersKey] = []
+      this[eventIndexKey] = 0
     }
 
     getChildContext() {
@@ -43,18 +44,9 @@ export function CreateContextProvider(ComposedComponent, name, options) {
       }
     }
 
-    // this method will be updated to UNSAFE_componentWillMount below for React versions >= 16.3
-    componentWillMount() {
-      this[listenersKey] = []
-      this[eventIndexKey] = 0
-    }
-
-    // this method will be updated to UNSAFE_componentWillReceiveProps below for React versions >= 16.3
-    componentWillReceiveProps() {
-      this[eventIndexKey]++
-    }
-
     componentDidUpdate() {
+      this[eventIndexKey]++
+
       this[listenersKey].forEach(listener =>
         listener(this[eventIndexKey])
       )
@@ -80,7 +72,7 @@ export function CreateContextProvider(ComposedComponent, name, options) {
     }
 
     render() {
-      const props = { ...this.props };
+      const props = { ...this.props }
       if (withRef) {
         props.withRef = (c) => {
           this.wrappedInstance = c
@@ -127,15 +119,16 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
       )
     }
 
-    // this method will be updated to UNSAFE_componentWillReceiveProps below for React versions >= 16.3
-    componentWillReceiveProps() {
+    componentDidUpdate() {
       if (!this.context[contextName]) {
         return
       }
 
-      this.setState({
-        [lastRenderedEventIndexKey]: this.context[contextName].eventIndex
-      })
+      if(this.context[contextName].eventIndex !== this.state[lastRenderedEventIndexKey]) {
+        this.setState({
+          [lastRenderedEventIndexKey]: this.context[contextName].eventIndex
+        })
+      }
     }
 
     componentWillUnmount() {
@@ -174,12 +167,6 @@ export function CreateContextSubscriber(ComposedComponent, name, options) {
       return <ComposedComponent {...props} />
     }
   }
-
-  if (prefixUnsafeLifecycleMethods) {
-    config.UNSAFE_componentWillReceiveProps = config.componentWillReceiveProps
-    delete config.componentWillReceiveProps
-  }
-  return config
 }
 
 // We are exporting this just to backward compatibility
