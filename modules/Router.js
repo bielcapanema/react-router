@@ -48,6 +48,9 @@ class Router extends Component {
     this.handleError = this.handleError.bind(this)
     this.createRouterObject = this.createRouterObject.bind(this)
     this.createTransitionManager = this.createTransitionManager.bind(this)
+
+    this.transitionManager = this.createTransitionManager()
+    this.router = this.createRouterObject(this.state)
   }
 
   handleError(error) {
@@ -93,9 +96,6 @@ class Router extends Component {
 
   // this method will be updated to UNSAFE_componentWillMount below for React versions >= 16.3
   componentWillMount() {
-    this.transitionManager = this.createTransitionManager()
-    this.router = this.createRouterObject(this.state)
-
     this._unlisten = this.transitionManager.listen((error, state) => {
       if (error) {
         this.handleError(error)
